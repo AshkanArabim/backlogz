@@ -30,14 +30,21 @@ export default function TabLayout() {
         name="instant-play"
         options={{
           title: 'Instant Play',
-          tabBarIcon: ({ color }) => <Ionicons name="play-circle" size={28} color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <Ionicons name="play-circle" size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="podcast-generator"
+        options={{
+          title: 'AI Generator',
+          tabBarIcon: ({ color }: { color: string }) => <Ionicons name="mic" size={28} color={color} />,
         }}
       />
       <Tabs.Screen
         name="my-topics"
         options={{
           title: 'My Topics',
-          tabBarIcon: ({ color }) => <Ionicons name="list" size={28} color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <Ionicons name="list" size={28} color={color} />,
         }}
       />
     </Tabs>
