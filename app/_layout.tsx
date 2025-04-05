@@ -1,70 +1,74 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
+import { Slot, useSegments, useRouter, SplashScreen } from 'expo-router';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
-import { NavigationContainer } from '@react-navigation/native';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { auth } from '@/src/firebaseConfig';
-import { AuthStackNavigator, AppStackNavigator } from '@/src/navigation/StackNavigator';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
+// Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  // console.log("[RootLayout] Component Mounting..."); // Log mount
   const colorScheme = useColorScheme();
+  const segments = useSegments();
+  const router = useRouter();
+
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
   const [user, setUser] = useState<User | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
-  // console.log(`[RootLayout] Initial State - loaded: ${loaded}, initializing: ${initializing}`);
-
-  // Listener for Firebase auth state changes
+  // Mark component as mounted
   useEffect(() => {
-    // console.log("[RootLayout] Auth listener effect setup.");
+    setMounted(true);
+  }, []);
+
+  // Handle auth state changes
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      // console.log("[RootLayout] onAuthStateChanged triggered. User:", currentUser?.uid || null);
       setUser(currentUser);
       if (initializing) {
-        // console.log("[RootLayout] Setting initializing to false.");
         setInitializing(false);
       }
     });
 
-    // Cleanup subscription on unmount
-    return () => {
-      // console.log("[RootLayout] Auth listener cleanup.");
-      unsubscribe();
+    return unsubscribe;
+  }, []);
+
+  // Handle routing based on auth state
+  useEffect(() => {
+    if (!mounted || initializing || !loaded) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+    
+    if (!user && !inAuthGroup) {
+      // If user is not authenticated and not in auth group, redirect to login
+      router.replace('/(auth)/login');
+    } else if (user && inAuthGroup) {
+      // If user is authenticated and in auth group, redirect to main app
+      router.replace('/(tabs)/home');
     }
-  }, []); // Changed dependency to empty array - only run once
+  }, [user, segments, initializing, mounted, loaded]);
 
   useEffect(() => {
-    // console.log(`[RootLayout] Font/Auth Effect Triggered - loaded: ${loaded}, initializing: ${initializing}`);
     if (loaded && !initializing) {
-      // console.log("[RootLayout] Hiding Splash Screen.");
       SplashScreen.hideAsync();
     }
-  }, [loaded, initializing]); // Update dependencies
+  }, [loaded, initializing]);
 
-  // Show nothing or a loading indicator while initializing or fonts loading
   if (!loaded || initializing) {
-    // console.log(`[RootLayout] Rendering null (loading/initializing) - loaded: ${loaded}, initializing: ${initializing}`);
-    return null; // Or return a loading component e.g., <ActivityIndicator size="large" />
+    return null;
   }
 
-  // Use NavigationContainer and render the correct navigator based on user state
-  // console.log(`[RootLayout] Rendering Navigators - User state: ${user ? 'Logged In' : 'Logged Out'}`);
   return (
-    <>
-      {user ? <AppStackNavigator /> : <AuthStackNavigator />}
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-    </>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Slot />
+    </ThemeProvider>
   );
 }

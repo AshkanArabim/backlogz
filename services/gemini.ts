@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { EXPO_PUBLIC_GEMINI_API_KEY } from '@env';
+import { EXPO_PUBLIC_GEMINI_API_KEY } from '@/expo-env';
 
 if (!EXPO_PUBLIC_GEMINI_API_KEY) {
   console.error('Gemini API key is not set in .env file');

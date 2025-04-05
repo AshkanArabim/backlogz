@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native'; // Added StyleSheet and Alert
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { router } from 'expo-router';
+import { auth } from '@/src/firebaseConfig';
 
-export default function SignUpScreen({ navigation }) {
+export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState(''); // Added confirm password
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false); // Added loading state
+  const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
     if (!email || !password || !confirmPassword) {
@@ -19,24 +20,21 @@ export default function SignUpScreen({ navigation }) {
       setError('Passwords do not match.');
       return;
     }
-     if (password.length < 6) { // Basic password strength check
+    if (password.length < 6) {
       setError('Password should be at least 6 characters.');
       return;
     }
 
     setLoading(true);
-    setError(''); // Clear previous errors
+    setError('');
     try {
-      // console.log(`Attempting signup for: ${email}, Auth instance project ID: ${auth.app.options.projectId}`); // <-- Add log
       await createUserWithEmailAndPassword(auth, email, password);
-      // Navigation to 'Home' will be handled by the auth state listener in App.js ideally
-      // For now, we keep the original navigation logic, but this might change
-      // navigation.replace('Home'); 
-    } catch (err) {
+      // Navigation will be handled by the auth state listener in _layout.tsx
+    } catch (err: any) {
       setError(err.message);
-      Alert.alert("Sign Up Failed", err.message); // Provide user feedback
+      Alert.alert("Sign Up Failed", err.message);
     } finally {
-      setLoading(false); // Stop loading indicator
+      setLoading(false);
     }
   };
 
@@ -60,7 +58,7 @@ export default function SignUpScreen({ navigation }) {
         style={styles.input}
         placeholderTextColor="#888"
       />
-       <TextInput
+      <TextInput
         placeholder="Confirm Password"
         value={confirmPassword}
         onChangeText={setConfirmPassword}
@@ -69,17 +67,24 @@ export default function SignUpScreen({ navigation }) {
         placeholderTextColor="#888"
       />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      <Button title={loading ? "Creating Account..." : "Create Account"} onPress={handleSignUp} disabled={loading} />
+      <Button 
+        title={loading ? "Creating Account..." : "Create Account"} 
+        onPress={handleSignUp} 
+        disabled={loading} 
+      />
       <View style={styles.switchContainer}>
-        <Button title="Already have an account? Log In" onPress={() => navigation.navigate('Login')} disabled={loading}/>
+        <Button 
+          title="Already have an account? Log In" 
+          onPress={() => router.push('/login')} 
+          disabled={loading}
+        />
       </View>
     </View>
   );
 }
 
-// Reusing styles similar to LoginScreen for consistency
 const styles = StyleSheet.create({
-    container: {
+  container: {
     flex: 1,
     justifyContent: 'center',
     padding: 20,
@@ -110,4 +115,4 @@ const styles = StyleSheet.create({
     marginTop: 15,
     alignItems: 'center',
   }
-});
+}); 
